@@ -320,15 +320,21 @@ a.xref { text-decoration-style: dotted; text-underline-offset: 3px; }
 a.xref::after { content: "▸"; display: inline-block; font-size: .78em; margin-left: 2px; transition: transform .15s; }
 a.xref[aria-expanded="true"]::after { transform: rotate(90deg); }
 a.chip.xref::after { margin-left: 4px; }
-.acc { margin: 10px 0 14px; border: 1px solid var(--accent); border-radius: 10px; background: rgba(255, 255, 255, .38); overflow: hidden; font-size: 14px; color: var(--fg); }
-.acc-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 8px 12px; background: var(--accent-soft); border-bottom: 1px solid var(--line); }
-.acc-t { font-weight: 600; flex: 1 1 14em; min-width: 0; }
-.acc-jump { font-size: 12.5px; }
-.acc-close { font: inherit; font-size: 12.5px; padding: 2px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
-.acc-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.acc-body { padding: 4px 14px 12px; min-width: 0; }
+/* 開いた参照は「別の紙を差し込んだ」ように見せる：左の太い帯・上下の見出し帯・本文と違う地色で、範囲をはっきりさせる */
+.acc { margin: 12px 0 18px; border: 1.5px solid var(--accent); border-left: 6px solid var(--accent); border-radius: 10px; background: #F7FAFE !important; overflow: hidden; font-size: 14.5px; color: var(--fg); box-shadow: 0 6px 22px rgba(20, 60, 120, .18) !important; }
+.acc .acc { background: #FFFFFF !important; border-color: #4D7FC4; }
+.acc-head { display: flex; gap: 8px 10px; align-items: center; flex-wrap: wrap; padding: 9px 12px; background: var(--accent); color: #fff; }
+.acc-kicker { font-size: 11px; font-weight: 700; letter-spacing: .08em; padding: 1px 8px; border-radius: 999px; background: rgba(255, 255, 255, .22); }
+.acc-t { font-weight: 700; flex: 1 1 14em; min-width: 0; }
+.acc-head .acc-jump { font-size: 12.5px; color: #fff; }
+.acc-close { font: inherit; font-size: 12.5px; font-weight: 600; padding: 2px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,.7); background: rgba(255,255,255,.15); color: #fff; cursor: pointer; }
+.acc-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.acc-body { padding: 8px 16px 14px; min-width: 0; }
 .acc-body > .qbody { padding: 0; }
 .acc-body h3 { margin-top: 18px; }
+.acc-foot { display: flex; gap: 8px 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 7px 12px; background: var(--accent-soft); border-top: 1px dashed var(--accent); font-size: 12.5px; color: var(--accent); }
+.acc-foot .acc-close { color: var(--accent); border-color: var(--accent); background: #fff; }
+a.xref[aria-expanded="true"] { background: var(--accent); color: #fff; text-decoration: none; border-radius: 4px; padding: 0 4px; }
 tr.acc-row > td { padding: 0 10px; background: var(--surface); }
 @media (prefers-reduced-motion: reduce) { a.xref::after { transition: none; } }
 footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
@@ -499,7 +505,7 @@ footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line);
     <li><strong>きっかけ</strong>：location が変わる（<code>setLocation</code>）。変わらなければ、<code>useLocation</code> を呼んでいても何も起きない。</li>
     <li><strong>届け先</strong>：<code>useLocation()</code> で購読している。変わっても、購読していないコンポーネントには届かない。</li>
   </ul>
-  <p><code>useNavigate()</code> も描画のたびに呼ばれますが、新しく作っているのではなく、React Router が保管している関数を受け取っています（Spring で言えば DI コンテナからシングルトンの Bean を取得するイメージ）。では <code>useLocation()</code> も同じなのか、という違いは <a href="#s0-8">0-8 navigate と location の違い</a> にまとめています。</p>
+  <p><code>useNavigate()</code> も描画のたびに呼ばれますが、新しく作っているのではなく、React Router が保管している関数を受け取っています（Spring で言えば DI コンテナからシングルトンの Bean を取得するイメージ）。その仕組み（中で useCallback が使われていること）は <a href="#s0-9">0-9</a> で説明します。では <code>useLocation()</code> も同じなのか、という違いは <a href="#s0-8">0-8 navigate と location の違い</a> にまとめています。</p>
 
   <h3 id="s0-6"><span class="sid">0-6</span>「state」と名のつく4つのもの</h3>
   <div class="tbl"><table>
@@ -535,7 +541,7 @@ footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line);
     <tr><td>中に入る物</td><td>React Router が保管している移動用の関数</td><td>React Router が持っている「現在の location」オブジェクト</td></tr>
     <tr><td>URL が変わらない再描画（自分の useState の更新など）</td><td><strong>同じ関数</strong></td><td><strong>同じオブジェクト</strong></td></tr>
     <tr><td>URL・state が変わったとき</td><td>基本は<strong>同じ関数</strong>（BrowserRouter 方式ではパスが変わると作り直されることがある）</td><td><strong>新しいオブジェクトに差し替わる</strong>（古いオブジェクトは書き換えない）</td></tr>
-    <tr><td>Spring のたとえ</td><td>シングルトンの Bean。何度取得しても同じインスタンス</td><td>状態が変わるたびに作り直される不変の値オブジェクト（DTO）。中身を書き換えず、新しい物と取り替える</td></tr>
+    <tr><td>Spring のたとえ</td><td>シングルトンの Bean。何度取得しても同じインスタンス（中で useCallback 済み。<a href="#s0-9">0-9</a>）</td><td>状態が変わるたびに作り直される不変の値オブジェクト（DTO）。中身を書き換えず、新しい物と取り替える</td></tr>
   </table></div>
   <figure class="dg"><figcaption>描画ごとに、変数の中に何が入っているか</figcaption><div class="dg-body"><div class="tline">
     <div class="rcard"><div class="rhead"><b>描画①</b><span class="rsub">URL: /employees</span></div><div class="rphases">
@@ -551,6 +557,29 @@ footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line);
       <div class="ph"><span class="pn"></span><div><code>location</code> → 新しい <b>L2</b>（search: "?dept=dev"）。L1 は書き換えられずに残る</div></div></div></div>
   </div></div></figure>
   <p>この違いが、<a href="#s7-7">7-7</a> の依存配列 <code>[location, navigate]</code> の意味にもつながります。依存配列は「前回と同じ物か」を比べるので、毎回同じ <code>navigate</code> は useEffect の再実行を起こさず、URL が変わって差し替わった <code>location</code> だけが再実行を起こします。</p>
+
+  <h3 id="s0-9"><span class="sid">0-9</span>useNavigate は「登録済みの Bean」を受け取る：useCallback が中で済んでいる</h3>
+  <p>まず、何もしない場合の関数の性質を確認します。コンポーネントの中で関数を書くと、その関数は<strong>描画のたびに新しく作られます</strong>。関数本体が毎回最初から実行される（<a href="#s0-1">0-1</a>）ので、<code>const f = () =&gt; …</code> の行も毎回実行され、毎回別の関数オブジェクトができるからです。</p>
+  <p>これが困るのは、その関数を useEffect の依存配列に入れたときです。依存配列は「前回と同じ物か」を比べるので、毎回新しい関数は「変わった」と判定され、<strong>useEffect が描画のたびに再実行</strong>されます。</p>
+  <figure class="code"><figcaption>自分で書いた関数を依存配列に入れた場合</figcaption><pre><code><span class="ln" style="--i:0ch"><span class="kd">function</span><span class="w"> </span><span class="nx">EmployeeList</span><span class="p">(</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">navigate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useNavigate</span><span class="p">(</span><span class="p">)</span><span class="p">;</span></span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">goList</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">navigate</span><span class="p">(</span><span class="s2">&quot;/employees&quot;</span><span class="p">)</span><span class="p">;</span><span class="w">   </span><span class="c1">// ← 描画のたびに新しい関数ができる</span></span><span class="ln" style="--i:0ch">&#8203;</span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="nx">useEffect</span><span class="p">(</span><span class="p">(</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span></span><span class="ln" style="--i:4ch"><span class="w">    </span><span class="c1">// …goList を使う処理…</span></span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="p">}</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="nx">goList</span><span class="p">]</span><span class="p">)</span><span class="p">;</span><span class="w">   </span><span class="c1">// goList が毎回「変わった」と判定され、描画のたびに再実行される</span></span><span class="ln" style="--i:0ch"><span class="p">}</span></span></code></pre></figure>
+  <p>これを防ぐのが <code>useCallback</code> です。「この関数を React に預けておき、依存する値が変わらない限り、次の描画でも同じ関数を返してもらう」という仕組みです。Spring でたとえると、<strong>関数を Bean としてコンテナに登録し、毎回その同じインスタンスを取り出す</strong>ことに当たります。</p>
+  <figure class="code"><figcaption>useCallback で包むと、同じ関数が使い回される</figcaption><pre><code><span class="ln" style="--i:0ch"><span class="kd">const</span><span class="w"> </span><span class="nx">goList</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useCallback</span><span class="p">(</span></span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="p">(</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="nx">navigate</span><span class="p">(</span><span class="s2">&quot;/employees&quot;</span><span class="p">)</span><span class="p">,</span></span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="p">[</span><span class="nx">navigate</span><span class="p">]</span><span class="w">          </span><span class="c1">// navigate が変わらない限り、同じ goList を返す</span></span><span class="ln" style="--i:0ch"><span class="p">)</span><span class="p">;</span></span></code></pre></figure>
+  <p>そして <code>useNavigate()</code> は、<strong>この useCallback を React Router が中で済ませた状態で</strong>関数を返しています。navigate 関数は React Router が作り、React がコンポーネントごとに持っているフックの保管場所（Spring でいうコンテナ）に登録されています。<code>useNavigate()</code> を呼ぶたびに、その登録済みの同じ関数が返ってきます。</p>
+  <figure class="code"><figcaption>useNavigate の中では、すでに useCallback が使われている</figcaption><pre><code><span class="ln" style="--i:0ch"><span class="c1">// React Router の useNavigate の中身（説明用に簡略化）</span></span><span class="ln" style="--i:0ch"><span class="kd">function</span><span class="w"> </span><span class="nx">useNavigate</span><span class="p">(</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">navigator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="cm">/* BrowserRouter から受け取る */</span><span class="p">;</span></span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="kd">const</span><span class="w"> </span><span class="nx">navigate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">React</span><span class="p">.</span><span class="nx">useCallback</span><span class="p">(</span></span><span class="ln" style="--i:4ch"><span class="w">    </span><span class="p">(</span><span class="nx">to</span><span class="p">,</span><span class="w"> </span><span class="nx">options</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="cm">/* history.pushState / replaceState ＋ setLocation */</span><span class="w"> </span><span class="p">}</span><span class="p">,</span></span><span class="ln" style="--i:4ch"><span class="w">    </span><span class="p">[</span><span class="nx">navigator</span><span class="p">,</span><span class="w"> </span><span class="cm">/* 現在のパス など */</span><span class="p">]</span></span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="p">)</span><span class="p">;</span></span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nx">navigate</span><span class="p">;</span><span class="w">   </span><span class="c1">// ← 登録済みの同じ関数を返す</span></span><span class="ln" style="--i:0ch"><span class="p">}</span></span></code></pre></figure>
+  <figure class="dg"><figcaption>自分で書いた関数と navigate の違い</figcaption><div class="dg-body">
+    <div class="cmp">
+      <div class="cmp-col"><div class="cmp-h">自分で書いた関数<small>const goList = () =&gt; …</small></div>
+        <div class="vars"><div class="vrow ng"><code>描画①</code><span class="kind">関数 A を新しく作る</span><span class="res"></span></div>
+        <div class="vrow ng"><code>描画②</code><span class="kind">関数 B を新しく作る（A とは別物）</span><span class="res">変わった ✘</span></div></div>
+        <p class="dg-note bad">依存配列に入れると毎回 useEffect が動く。防ぐには自分で useCallback で包む必要がある。</p></div>
+      <div class="cmp-col"><div class="cmp-h">navigate<small>const navigate = useNavigate()</small></div>
+        <div class="vars"><div class="vrow ok"><code>描画①</code><span class="kind">登録済みの関数 N を受け取る</span><span class="res"></span></div>
+        <div class="vrow ok"><code>描画②</code><span class="kind">同じ N を受け取る</span><span class="res">同じ ✔</span></div></div>
+        <p class="dg-note good">useCallback は React Router が中で済ませている。依存配列に入れても useEffect は動かず、自分で包む必要もない。</p></div>
+    </div>
+  </div></figure>
+  <p>まとめると、<code>useNavigate()</code> を使う側では<strong>「useCallback で包む」という作業が最初から不要</strong>になっています。<a href="#s7-7">7-7</a> の依存配列に <code>navigate</code> を入れても useEffect が無駄に再実行されないのは、このためです。</p>
+  <div class="note info"><strong>正確に言うと</strong>React Router が useCallback に渡している依存値には「現在のパス」が含まれます。そのため <code>&lt;BrowserRouter&gt;</code> 方式では、URL のパス部分（<code>/employees</code> → <code>/employees/1</code> など）が変わったときだけ、新しい navigate に作り直されます（同じパスのままクエリや state だけが変わる場合は同じ関数のまま）。<a href="#s3-4">3-4</a> の <code>createBrowserRouter</code> 方式では、パスが変わっても同じ関数が返ります。どちらの場合も、使う側が useCallback で包む必要はありません。</div>
 </section>
 
 <!-- ============================================================ 1 -->
@@ -969,18 +998,18 @@ footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line);
       <div class="ctx"><div class="ctx-l">読んでいた箇所</div><div class="ctx-b"><ul><li><a href="#s7-7">7-7</a> の差分コードと、<a href="#q4">Q4</a> の回答</li><li>5つの疑問をまとめて質問 → 以下①〜⑤</li></ul></div></div>
 
       <div class="subq"><h4>① なぜ依存配列に navigate を入れている？</h4>
-        <div class="ctx"><div class="ctx-l">対象</div><div class="ctx-b">7-7 で一覧に追加した useEffect の依存配列（下のコード）</div></div>
+        <div class="ctx"><div class="ctx-l">対象</div><div class="ctx-b"><a href="#s7-7">7-7</a> で一覧に追加した useEffect の依存配列（下のコード）</div></div>
         <figure class="code"><pre><code><span class="ln" style="--i:0ch"><span class="nx">useEffect</span><span class="p">(</span><span class="p">(</span><span class="p">)</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p">{</span></span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">location</span><span class="p">.</span><span class="nx">state</span><span class="o">?</span><span class="p">.</span><span class="nx">message</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></span><span class="ln" style="--i:4ch"><span class="w">    </span><span class="nx">navigate</span><span class="p">(</span><span class="s2">&quot;/employees&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nx">replace</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="nx">state</span><span class="o">:</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="p">}</span><span class="p">)</span><span class="p">;</span></span><span class="ln" style="--i:2ch"><span class="w">  </span><span class="p">}</span></span><span class="ln" style="--i:0ch"><span class="p">}</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="nx">location</span><span class="p">,</span><span class="w"> </span><span class="nx">navigate</span><span class="p">]</span><span class="p">)</span><span class="p">;</span><span class="w">   </span><span class="c1">// ← この navigate</span></span></code></pre></figure>
         <div class="qpair"><div class="before"><span class="lbl">疑問</span><p>if の判定に使っているのは location だけ。navigate まで依存配列に入れる必要があるのか。</p></div>
         <div class="after"><span class="lbl">補正後</span><p>「useEffect の中で使う外側の値は依存配列に全部書く」ルール（ESLint <code>react-hooks/exhaustive-deps</code>）に従っただけ。navigate は通常、描画をまたいで同じ関数なので実質的な役割はなく、動作を決めているのは <code>location</code>。→ 「毎回同じ関数なのか？」は <a href="#q6">Q6①</a> でさらに掘り下げ。</p></div></div></div>
 
       <div class="subq"><h4>② location.search を足す意味がやはり分からない</h4>
-        <div class="ctx"><div class="ctx-l">対象</div><div class="ctx-b"><ul><li>当初の 7-7 のコード <code>navigate(location.pathname + location.search, { replace: true, state: null })</code></li><li><a href="#q3">Q3</a> で<span class="said">どの画面でもURLを崩さない汎用形</span>と説明されたが、まだ腑に落ちなかった</li></ul></div></div>
+        <div class="ctx"><div class="ctx-l">対象</div><div class="ctx-b"><ul><li>当初の <a href="#s7-7">7-7</a> のコード <code>navigate(location.pathname + location.search, { replace: true, state: null })</code></li><li><a href="#q3">Q3</a> で<span class="said">どの画面でもURLを崩さない汎用形</span>と説明されたが、まだ腑に落ちなかった</li></ul></div></div>
         <div class="qpair"><div class="before"><span class="lbl">疑問</span><p>登録後は <code>/employees</code> に来るのだから、search を足す場面がない。</p></div>
         <div class="after"><span class="lbl">補正後</span><p><strong>その通りで、このアプリでは意味がない。</strong><code>navigate("/employees", …)</code> と書くのが分かりやすく、本ノートもそちらに統一。意味を持つのは「登録後に絞り込み済みの一覧 <code>/employees?dept=dev</code> に戻す」仕様にした場合だけ。→ そのシナリオ自体は <a href="#q6">Q6②</a> へ。</p></div></div></div>
 
       <div class="subq"><h4>③ setter が無いのに「useState の値は保持される」とは？</h4>
-        <div class="ctx"><div class="ctx-l">対象</div><div class="ctx-b"><ul><li>7-7 で追加した次の1行（下のコード）</li><li>手順4の説明<span class="said">useState の値は保持される → メッセージは出たまま</span></li></ul></div></div>
+        <div class="ctx"><div class="ctx-l">対象</div><div class="ctx-b"><ul><li><a href="#s7-7">7-7</a> で追加した次の1行（下のコード）</li><li>手順4の説明<span class="said">useState の値は保持される → メッセージは出たまま</span></li></ul></div></div>
         <figure class="code"><pre><code><span class="ln" style="--i:0ch"><span class="kd">const</span><span class="w"> </span><span class="p">[</span><span class="nx">message</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">useState</span><span class="p">(</span><span class="nx">location</span><span class="p">.</span><span class="nx">state</span><span class="o">?</span><span class="p">.</span><span class="nx">message</span><span class="p">)</span><span class="p">;</span><span class="w">   </span><span class="c1">// setter を受け取っていない</span></span></code></pre></figure>
         <div class="qpair"><div class="before"><span class="lbl">疑問</span><p>左辺は <code>[message]</code> だけで setter がない。それなら値が変わる余地はそもそも無いのに、わざわざ「保持される」と言う意味が分からない。</p></div>
         <div class="after"><span class="lbl">補正後</span><p>指摘どおり書き換える手段はない。ここでの「保持」は「<strong>再レンダリングで新しい初期値（手順4では undefined）が渡されても上書きされない</strong>」という意味。普通の変数 <code>const message = location.state?.message</code> なら、手順4の描画で undefined になってメッセージが消える。</p></div></div></div>
@@ -1013,7 +1042,7 @@ footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line);
       <div class="subq"><h4>① useNavigate() は描画のたびに新しい関数を作るのでは？</h4>
         <div class="ctx"><div class="ctx-l">きっかけ</div><div class="ctx-b"><a href="#q5">Q5①</a> の説明<span class="said">navigate は描画をまたいで同じ関数なので、依存配列に入れても実質影響しない</span></div></div>
         <div class="qpair"><div class="before"><span class="lbl">疑問</span><p>ESLint への配慮だとは予想できた。しかし <code>const navigate = useNavigate();</code> は関数本体にあり、useEffect にも囲まれていないので、描画のたびに新しい navigate が作られるのでは？ それなら依存配列に入れると毎回 useEffect が動くのでは？</p></div>
-        <div class="after"><span class="lbl">補正後</span><p>フックの呼び出しは「新しく作る」ではなく「保管されたものを受け取る」。<code>useState</code> の <code>setCount</code> が毎回同じ関数なのと同じで、Spring でいえば DI コンテナからシングルトンの Bean を取得するイメージ。BrowserRouter 方式ではURLのパスが変わったときだけ作り直されるが、7-7 は同じURLへの置き換えなので変わらない。仮に変わっても if のガードで何もしない。</p></div></div></div>
+        <div class="after"><span class="lbl">補正後</span><p>フックの呼び出しは「新しく作る」ではなく「保管されたものを受け取る」。React Router が中で useCallback を使って navigate を登録しているので（<a href="#s0-9">0-9</a>）、<code>useState</code> の <code>setCount</code> が毎回同じ関数なのと同じで、Spring でいえば DI コンテナからシングルトンの Bean を取得するイメージ。BrowserRouter 方式ではURLのパスが変わったときだけ作り直されるが、<a href="#s7-7">7-7</a> は同じURLへの置き換えなので変わらない。仮に変わっても if のガードで何もしない。</p></div></div></div>
 
       <div class="subq"><h4>② 「登録後に絞り込み済みの一覧へ戻す」のシナリオが思いつかない</h4>
         <div class="ctx"><div class="ctx-l">きっかけ</div><div class="ctx-b"><a href="#q5">Q5②</a> の説明<span class="said">location.search が意味を持つのは、登録後に /employees?dept=dev に戻す仕様の場合</span></div></div>
@@ -1100,7 +1129,8 @@ footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line);
     <tr><td><code>useNavigate()</code></td><td><code>return "redirect:/..."</code></td><td><a href="#s7">7</a></td></tr>
     <tr><td><code>replace: true</code></td><td>PRG パターン</td><td><a href="#s7-4">7-4</a></td></tr>
     <tr><td><code>&lt;Navigate /&gt;</code></td><td>Interceptor でのリダイレクト</td><td><a href="#s7-5">7-5</a></td></tr>
-    <tr><td><code>useNavigate()</code> の取得</td><td>DI コンテナからシングルトン Bean を取得</td><td><a href="#q6">Q6</a></td></tr>
+    <tr><td><code>useNavigate()</code> の取得</td><td>DI コンテナからシングルトン Bean を取得</td><td><a href="#s0-9">0-9</a>・<a href="#q6">Q6</a></td></tr>
+    <tr><td><code>useCallback</code></td><td>関数を Bean として登録し、同じインスタンスを使い回す</td><td><a href="#s0-9">0-9</a></td></tr>
   </table></div>
 </section>
 
@@ -1136,7 +1166,7 @@ footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line);
 
   function anchorPoint(a) {
     // 列や横並びの中では開かず、そのまとまり全体の下に全幅で開く
-    var wide = a.closest(".map3, .cmp, .pair2, .phases3");
+    var wide = a.closest(".map3, .cmp, .pair2, .phases3, .qpair, .ctx, .legend");
     if (wide) return { after: wide };
     var blk = a.closest(".qpair, .ctx, .rel, .note, .tbl, li, p, figure") || a.parentElement;
     if (blk.classList.contains("tbl")) {
@@ -1160,13 +1190,17 @@ footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line);
     box.className = "acc";
     var head = document.createElement("div");
     head.className = "acc-head";
-    head.innerHTML = '<span class="acc-t"></span><a class="acc-jump" href="#' + id + '">この場所へ移動</a><button type="button" class="acc-close" aria-label="閉じる">閉じる</button>';
+    head.innerHTML = '<span class="acc-kicker">参照</span><span class="acc-t"></span><a class="acc-jump" href="#' + id + '">この場所へ移動</a><button type="button" class="acc-close" aria-label="閉じる">閉じる ▲</button>';
     head.querySelector(".acc-t").textContent = f.title;
     var body = document.createElement("div");
     body.className = "acc-body";
     f.nodes.forEach(function (n) { var c = n.cloneNode(true); stripIds(c); body.appendChild(c); });
-    box.appendChild(head); box.appendChild(body);
-    head.querySelector(".acc-close").addEventListener("click", function () { toggle(a); a.focus(); });
+    var foot = document.createElement("div");
+    foot.className = "acc-foot";
+    foot.innerHTML = '<span>▲ 参照ここまで：<b></b></span><button type="button" class="acc-close">閉じる ▲</button>';
+    foot.querySelector("b").textContent = f.title;
+    box.appendChild(head); box.appendChild(body); box.appendChild(foot);
+    box.querySelectorAll(".acc-close").forEach(function (btn) { btn.addEventListener("click", function () { toggle(a); a.focus(); }); });
     return box;
   }
 
